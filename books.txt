@@ -1,0 +1,4 @@
+1) Ilkay,Köroğlu,2000,134
+2) Ataberk,Köroğlu,2000,200
+3) Ataberk,Köroğlu,2000,200
+4) Ataberk,Köroğlu,2000,200
