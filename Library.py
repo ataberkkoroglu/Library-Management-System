@@ -1,16 +1,15 @@
-from PyQt5.QtWidgets import QWidget,QApplication,QLineEdit,QTableWidget,QHeaderView,QLabel,QPushButton,QVBoxLayout,QHBoxLayout
-from PyQt5.QtWidgets import QTableWidgetItem,QErrorMessage,QDesktopWidget,QMainWindow,qApp
+from PyQt5.QtWidgets import QWidget,QApplication,QLineEdit,QTableWidget,QHeaderView,QLabel,QPushButton,QVBoxLayout,QHBoxLayout,QMessageBox
+from PyQt5.QtWidgets import QTableWidgetItem,QErrorMessage,QDesktopWidget,QMainWindow,qApp,QFileDialog
 from PyQt5.QtGui import QFont,QPixmap,QKeySequence,QIcon
 from PyQt5.QtCore import Qt
 from datetime import datetime
-import sys
+import sys,pandas as pd,os,openpyxl
 
 class Library(QMainWindow):
 
     def __init__(self):
      super().__init__()
      self.file=open("books.txt","a+",encoding="utf-8")
-     
      self.Menu()
 
     def Menu(self):
@@ -75,9 +74,9 @@ class Library(QMainWindow):
        h_box3.addSpacing(100)
        h_box3.addWidget(self.quit)
       
-       v_box.addSpacing(50)
+       v_box.addSpacing(30)
        v_box.addLayout(h_box)
-       v_box.addSpacing(50)
+       v_box.addSpacing(30)
        v_box.addLayout(h_box2)
        v_box.addSpacing(50)
        v_box.addLayout(h_box3)
@@ -101,12 +100,8 @@ class Library(QMainWindow):
        self.Window.setMinimumWidth(400)
        self.Window.setMinimumHeight(400)
 
-       self.time=QLabel()
-       self.time.setStyleSheet("color : red")
-
        self.file.seek(0)
        self.content=self.file.readlines()
-       print(self.content)
         
        self.back=QPushButton("<")
        self.back.setFont(QFont('Arial',14,3))
@@ -117,13 +112,18 @@ class Library(QMainWindow):
        self.quit.setStyleSheet("background : red")
        self.quit.setShortcut(QKeySequence('q' or 'Q'))
 
+       self.save=QPushButton("Save As Excel")
+       self.save.setFont(QFont('Arial',14,3))
+       self.save.setStyleSheet("background : green")
+       self.save.setShortcut(QKeySequence("return"))
+
        self.table=QTableWidget()
        self.table.setFont(QFont('Arial',11,3))
        
        self.table.setStyleSheet("color : red")
        
-       self.table.setColumnCount(4)
-       self.table.setHorizontalHeaderLabels(["Title","Author","Release Year","Pages"])
+       self.table.setColumnCount(6)
+       self.table.setHorizontalHeaderLabels(["Title","Author","Release Year","Pages","Number","Edition"])
        self.table.setRowCount(len(self.content))
        
        header=self.table.horizontalHeader()
@@ -134,6 +134,8 @@ class Library(QMainWindow):
           
           self.content[i]=self.content[i].replace('\n','')
           self.Content=self.content[i][2:].split(',')
+         
+          
           item=QTableWidgetItem(self.Content[0])
           item.setTextAlignment(Qt.AlignHCenter)
           self.table.setItem(i,0,item)
@@ -149,19 +151,30 @@ class Library(QMainWindow):
           item=QTableWidgetItem(self.Content[3])
           item.setTextAlignment(Qt.AlignHCenter)
           self.table.setItem(i,3,item)
+
+          item=QTableWidgetItem(self.Content[4])
+          item.setTextAlignment(Qt.AlignHCenter)
+          self.table.setItem(i,4,item)
+
+          item=QTableWidgetItem(self.Content[5])
+          item.setTextAlignment(Qt.AlignHCenter)
+          self.table.setItem(i,5,item)
           
           header.setSectionResizeMode(0,QHeaderView.ResizeToContents)
           header.setSectionResizeMode(1,QHeaderView.ResizeToContents)
           header.setSectionResizeMode(2,QHeaderView.ResizeToContents)
           header.setSectionResizeMode(3,QHeaderView.ResizeToContents)
-          
-          
+          header.setSectionResizeMode(4,QHeaderView.ResizeToContents)
+          header.setSectionResizeMode(5,QHeaderView.ResizeToContents)
+
        else:
          for i in range(0,3):
           self.table.setItem(i,0,QTableWidgetItem(""))
           self.table.setItem(i,1,QTableWidgetItem(""))
           self.table.setItem(i,2,QTableWidgetItem(""))
           self.table.setItem(i,3,QTableWidgetItem(""))
+          self.table.setItem(i,4,QTableWidgetItem(""))
+          self.table.setItem(i,5,QTableWidgetItem(""))
           
        self.table.setEditTriggers(QTableWidget.NoEditTriggers)
        self.table.setSortingEnabled(False)
@@ -180,25 +193,294 @@ class Library(QMainWindow):
        h_box.addStretch()
        
        h_box2=QHBoxLayout()
-       
+       h_box2.addSpacing(30)
        h_box2.addWidget(self.back)
        h_box2.addSpacing(50)
+       h_box2.addWidget(self.save)
+       h_box2.addSpacing(50)
        h_box2.addWidget(self.quit)
+       h_box2.addSpacing(30)
+
        v_box.addLayout(h_box)
        v_box.addSpacing(50)
        v_box.addWidget(self.table)
        v_box.addSpacing(50)
        v_box.addLayout(h_box2)
+
        self.Window.setLayout(v_box)
+
        self.back.clicked.connect(self.Menu)
        self.quit.clicked.connect(self.Quit)
+       self.save.clicked.connect(self.Excel)
        self.Window.show()
-       
-   
+
+    def Excel(self):
+     
+     self.file.seek(0)
+     self.content=self.file.readlines()
+
+     self.title_list=list()
+     self.author_list=list()
+     self.Year=list()
+     self.Page_list=list()
+     self.Number_list=list()
+     self.Edition_list=list()
+
+     for i in range(0,len(self.content)):
+
+      self.Content=self.content[i][3:].split(',')
+
+      self.title_list.append(self.Content[0])
+      self.author_list.append(self.Content[1])
+      self.Year.append(self.Content[2])
+      self.Page_list.append(self.Content[3])
+      self.Number_list.append(self.Content[4])
+      self.Edition_list.append(self.Content[5])
+
+     df = pd.DataFrame({'Title':self.title_list,'Author':self.author_list, 'Year':self.Year,  
+                         'Pages':self.Page_list, 'Number of Copies':self.Number_list,  
+                          "Edition" : self.Edition_list})
+     
+     default_dir="C:/Users/Asus/Desktop/Library Project"
+     default_filename=os.path.join(default_dir,"Books.xlsx")
+
+     filename,_=QFileDialog().getSaveFileName(self,"Save File",default_filename,"Excel Files (*.xlsx)")
+
+     if filename!=None:
+      with pd.ExcelWriter(filename, engine='openpyxl') as writer:
+         df.to_excel(writer,"Page1")
+     
     def Add(self):
+       
        self.Window=QWidget()
+       self.Window.setWindowTitle("Library Management")
+       self.Window.setStyleSheet("background : black")
+
+       self.Window.setMinimumWidth(400)
+       self.Window.setMinimumHeight(400)
+
+       self.back=QPushButton("<")
+       self.back.setFont(QFont('Arial',14,3))
+       self.back.setStyleSheet('background : gray')
+       
+       self.quit=QPushButton("Quit")
+       self.quit.setFont(QFont('Arial',14,3))
+       self.quit.setStyleSheet("background : red")
+       self.quit.setShortcut(QKeySequence('q' or 'Q'))
+
+       self.add=QPushButton("Add")
+       self.add.setFont(QFont('Arial',14,3))
+       self.add.setStyleSheet("background : green")
+       self.add.setShortcut(QKeySequence('return'))
+
+       self.clear=QPushButton("Clear")
+       self.clear.setFont(QFont('Arial',14,3))
+       self.clear.setStyleSheet("background : lightblue")
+
+       self.title=QLabel("Title : ")
+       self.title.setFont(QFont('Arial',18,3))
+       self.title.setStyleSheet("color : white")
+
+       self.Title=QLineEdit()
+       self.Title.setFont(QFont('Arial',14,3))
+       self.Title.setStyleSheet("color : white")
+
+       self.author=QLabel("Author : ")
+       self.author.setFont(QFont('Arial',18,3))
+       self.author.setStyleSheet("color : white")
+
+       self.Author=QLineEdit()
+       self.Author.setFont(QFont('Arial',14,3))
+       self.Author.setStyleSheet("color : white")
+
+       self.release_year=QLabel("Release Year : ")
+       self.release_year.setFont(QFont('Arial',18,3))
+       self.release_year.setStyleSheet("color : White")
+
+       self.Release_Year=QLineEdit()
+       self.Release_Year.setFont(QFont('Arial',14,3))
+       self.Release_Year.setStyleSheet("color : White")
+
+       self.page=QLabel("Page : ")
+       self.page.setFont(QFont('Arial',18,3))
+       self.page.setStyleSheet('color : White')
+
+       self.Page=QLineEdit()
+       self.Page.setFont(QFont('Arial',14,3))
+       self.Page.setStyleSheet('color : white')
+
+       self.number=QLabel("Number : ")
+       self.number.setFont(QFont('Arial',18,3))
+       self.number.setStyleSheet('color : White')
+
+       self.Number=QLineEdit()
+       self.Number.setFont(QFont('Arial',14,3))
+       self.Number.setStyleSheet('color : white')
+
+       self.edition=QLabel("Edition(1st,2nd...) : ")
+       self.edition.setFont(QFont('Arial',18,3))
+       self.edition.setStyleSheet('color : White')
+
+       self.Edition=QLineEdit()
+       self.Edition.setFont(QFont('Arial',14,3))
+       self.Edition.setStyleSheet('color : white')
+
+       self.library=QLabel()
+       self.library.setPixmap(QPixmap("Library.jpg"))
+
+       v_box=QVBoxLayout()
+       
+       h_box=QHBoxLayout()
+       h_box.addSpacing(30)
+       h_box.addWidget(self.title)
+       h_box.addSpacing(270)
+       h_box.addWidget(self.Title)
+       h_box.addSpacing(30)
+
+       h_box2=QHBoxLayout()
+       h_box2.addSpacing(30)
+       h_box2.addWidget(self.author)
+       h_box2.addSpacing(241)
+       h_box2.addWidget(self.Author)
+       h_box2.addSpacing(30)
+
+       h_box3=QHBoxLayout()
+       h_box3.addSpacing(30)
+       h_box3.addWidget(self.release_year)
+       h_box3.addSpacing(157)
+       h_box3.addWidget(self.Release_Year)
+       h_box3.addSpacing(30)
+
+       h_box4=QHBoxLayout()
+       h_box4.addSpacing(30)
+       h_box4.addWidget(self.page)
+       h_box4.addSpacing(262)
+       h_box4.addWidget(self.Page)
+       h_box4.addSpacing(30)
+
+       h_box5=QHBoxLayout()
+       h_box5.addSpacing(30)
+       h_box5.addWidget(self.number)
+       h_box5.addSpacing(225)
+       h_box5.addWidget(self.Number)
+       h_box5.addSpacing(30)
+
+       h_box8=QHBoxLayout()
+       h_box8.addSpacing(30)
+       h_box8.addWidget(self.edition)
+       h_box8.addSpacing(100)
+       h_box8.addWidget(self.Edition)
+       h_box8.addSpacing(30)
+
+       h_box6=QHBoxLayout()
+       h_box6.addSpacing(30)
+       h_box6.addWidget(self.back)
+       h_box6.addSpacing(50)
+       h_box6.addWidget(self.quit)
+       h_box6.addSpacing(30)
+
+       h_box7=QHBoxLayout()
+       h_box7.addSpacing(30)
+       h_box7.addWidget(self.clear)
+       h_box7.addSpacing(50)
+       h_box7.addWidget(self.add)
+       h_box7.addSpacing(30)
+       
+       v_box.addSpacing(30)
+       v_box.addLayout(h_box6)
+       v_box.addSpacing(30)
+       v_box.addWidget(self.library)
+       v_box.addSpacing(30)
+       v_box.addLayout(h_box)
+       v_box.addSpacing(30)
+       v_box.addLayout(h_box2)
+       v_box.addSpacing(30)
+       v_box.addLayout(h_box3)
+       v_box.addSpacing(30)
+       v_box.addLayout(h_box4)
+       v_box.addSpacing(30)
+       v_box.addLayout(h_box5)
+       v_box.addSpacing(30)
+       v_box.addLayout(h_box8)
+       v_box.addSpacing(30)
+       v_box.addLayout(h_box7)
+       v_box.addSpacing(30)
+
+       self.back.clicked.connect(self.Menu)
+       self.quit.clicked.connect(self.Quit)
+       self.clear.clicked.connect(self.Clear)
+       self.add.clicked.connect(self.Confirm)
+       self.Window.setLayout(v_box)
        self.Window.show()
-   
+    
+    def Clear(self):
+
+      self.Title.clear()
+      self.Author.clear()
+      self.Release_Year.clear()
+      self.Page.clear()
+      self.Number.clear()
+
+    def Confirm(self):
+      self.file.seek(0)
+      self.content=self.file.readlines()
+      self.content.sort()
+
+      if(self.Edition.text()==''):
+        self.Edition.setText("1st Edition")
+      if(self.Title.text()==''):
+         QMessageBox.warning(None,"Warning","Please input the title!")
+
+      if(self.Author.text()==''):
+        self.Author.setText("Unknown")
+      
+      if(int(self.Release_Year.text())>2024 or int(self.Release_Year.text())<1800):
+        QMessageBox.warning(None, "Error", "Invalid Year.")
+        self.Release_Year.clear()
+
+      if(int(self.Page.text())<1):
+        QMessageBox.warning(None,"Warning","The number of pages should be more than zero")
+        self.Page.clear()
+
+      if(int(self.Number.text())<1):
+        QMessageBox.warning(None,"Warning","The number of books should be more than zero")
+        self.Number.clear()
+      
+      flag=False
+     
+      if(self.Title.text()!='' and self.Author.text()!='' and self.Release_Year.text()!='' and self.Page.text()!='' and self.Number.text()!=''):
+       
+       if (len(self.content)!=0):
+
+        for i in range(0,len(self.content)):
+          
+          
+          self.Content=self.content[i][3:].split(',')
+          
+          if(self.Title.text()==self.Content[0] and self.Edition.text()==self.Content[5]):
+             
+             self.content[i]=self.content[i].replace('\n','')
+             text=",".join([self.Title.text(),self.Content[1],self.Content[2],self.Content[3],
+                            str(int(self.Content[4])+int(self.Number.text())),self.Edition.text()])
+             self.content[i]=str(i+1) +') '+text+'\n'
+             
+             flag=True
+             break
+          
+        if(flag):
+          
+          self.file.flush()
+          self.file.writelines(self.content)
+        else:
+          text='\n'+str(len(self.content)+1) +') '+",".join([self.Title.text(),self.Author.text(),self.Release_Year.text(),
+                                                           self.Page.text(),self.Number.text(),self.Edition.text()])
+          self.file.write(text)
+        
+       else:
+        text=str(len(self.content)+1)+") " +",".join([self.Title.text(),self.Author.text(),self.Release_Year.text(),self.Page.text(),
+                                                      self.Number.text(),self.Edition.text()])
+        self.file.write(text)
+
     def Remove(self):
        self.Window=QWidget()
        self.Window.show()
