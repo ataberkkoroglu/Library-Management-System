@@ -3,13 +3,18 @@ from PyQt5.QtWidgets import QTableWidgetItem,QErrorMessage,QDesktopWidget,QMainW
 from PyQt5.QtGui import QFont,QPixmap,QKeySequence,QIcon
 from PyQt5.QtCore import Qt
 from datetime import datetime
-import sys,pandas as pd,os,openpyxl
+import sys,pandas as pd,os,openpyxl,time
 
 class Library(QMainWindow):
 
     def __init__(self):
      super().__init__()
      self.file=open("books.txt","a+",encoding="utf-8")
+
+     msg=QMessageBox()
+     msg.setWindowIcon(QIcon("Library_Icon.jpg"))
+     msg=msg.information(self,"Library Management","Welcome To  The Library Management System!\n"+
+                         str(datetime.strftime(datetime.now(),"%H : %M : %S  %d / %m / %Y ")))
      self.Menu()
 
     def Menu(self):
@@ -21,12 +26,7 @@ class Library(QMainWindow):
        self.time=QLabel()
        self.time.setFont(QFont('Arial',20,2,True))
        self.time.setStyleSheet("color : White")
-     
-
-       self.date=QLabel(str(datetime.strftime(datetime.now(),"%H : %M : %S  %d / %m / %Y ")))
-       self.date.setFont(QFont('Arial',20,2,True))
-       self.date.setStyleSheet("color : White")
-       
+            
        self.library=QLabel()
        self.library.setPixmap(QPixmap("Library.jpg"))
 
@@ -52,8 +52,6 @@ class Library(QMainWindow):
        self.quit.setShortcut(QKeySequence('q' or 'Q'))   # When You press Q or q key , program will be terminated.
        
        v_box=QVBoxLayout()
-
-       v_box.addWidget(self.date)
        
        h_box=QHBoxLayout()
        h_box.addStretch()
@@ -247,8 +245,9 @@ class Library(QMainWindow):
      filename,_=QFileDialog().getSaveFileName(self,"Save File",default_filename,"Excel Files (*.xlsx)")
 
      if filename!=None:
+
       with pd.ExcelWriter(filename, engine='openpyxl') as writer:
-         df.to_excel(writer,"Page1")
+         df.to_excel(writer,"Page1",index=False,header=True)
      
     def Add(self):
        
@@ -257,7 +256,7 @@ class Library(QMainWindow):
        self.Window.setStyleSheet("background : black")
 
        self.Window.setMinimumWidth(400)
-       self.Window.setMinimumHeight(400)
+       self.Window.setMinimumHeight(1000)
 
        self.back=QPushButton("<")
        self.back.setFont(QFont('Arial',14,3))
@@ -276,6 +275,10 @@ class Library(QMainWindow):
        self.clear=QPushButton("Clear")
        self.clear.setFont(QFont('Arial',14,3))
        self.clear.setStyleSheet("background : lightblue")
+
+       self.list=QPushButton("List Books")
+       self.list.setFont(QFont('Arial',14,3))
+       self.list.setStyleSheet("background : yellow")
 
        self.title=QLabel("Title : ")
        self.title.setFont(QFont('Arial',18,3))
@@ -317,7 +320,7 @@ class Library(QMainWindow):
        self.Number.setFont(QFont('Arial',14,3))
        self.Number.setStyleSheet('color : white')
 
-       self.edition=QLabel("Edition(1st,2nd...) : ")
+       self.edition=QLabel("Edition(1,2,3...) : ")
        self.edition.setFont(QFont('Arial',18,3))
        self.edition.setStyleSheet('color : White')
 
@@ -368,7 +371,7 @@ class Library(QMainWindow):
        h_box8=QHBoxLayout()
        h_box8.addSpacing(30)
        h_box8.addWidget(self.edition)
-       h_box8.addSpacing(100)
+       h_box8.addSpacing(130)
        h_box8.addWidget(self.Edition)
        h_box8.addSpacing(30)
 
@@ -382,6 +385,8 @@ class Library(QMainWindow):
        h_box7=QHBoxLayout()
        h_box7.addSpacing(30)
        h_box7.addWidget(self.clear)
+       h_box7.addSpacing(50)
+       h_box7.addWidget(self.list)
        h_box7.addSpacing(50)
        h_box7.addWidget(self.add)
        h_box7.addSpacing(30)
@@ -405,50 +410,124 @@ class Library(QMainWindow):
        v_box.addSpacing(30)
        v_box.addLayout(h_box7)
        v_box.addSpacing(30)
-
+       
        self.back.clicked.connect(self.Menu)
        self.quit.clicked.connect(self.Quit)
        self.clear.clicked.connect(self.Clear)
-       self.add.clicked.connect(self.Confirm)
+       self.add.clicked.connect(self.Confirm_Add)
+       self.list.clicked.connect(self.List)
+
        self.Window.setLayout(v_box)
        self.Window.show()
     
     def Clear(self):
 
-      self.Title.clear()
-      self.Author.clear()
-      self.Release_Year.clear()
-      self.Page.clear()
-      self.Number.clear()
+      if(self.Title.text()!=""):
+       self.Title.clear()
+      if(self.Edition.text()!=""):
+       self.Edition.clear()
+      try:
+        self.Author.clear()
+        self.Release_Year.clear()
+        self.Page.clear()
+        self.Number.clear()
+      except:
+        pass
+      
+      
 
-    def Confirm(self):
+    def Confirm_Add(self):
+
       self.file.seek(0)
       self.content=self.file.readlines()
-      self.content.sort()
-
-      if(self.Edition.text()==''):
-        self.Edition.setText("1st Edition")
+      self.content.sort()         
+      
       if(self.Title.text()==''):
          QMessageBox.warning(None,"Warning","Please input the title!")
 
       if(self.Author.text()==''):
         self.Author.setText("Unknown")
-      
-      if(int(self.Release_Year.text())>2024 or int(self.Release_Year.text())<1800):
-        QMessageBox.warning(None, "Error", "Invalid Year.")
+
+      try:
+       if(int(self.Release_Year.text())>2024 or int(self.Release_Year.text())<1800):
+        QMessageBox.warning(None, "Warning", "Invalid Year.")
         self.Release_Year.clear()
 
-      if(int(self.Page.text())<1):
+      except:
+        QMessageBox.warning(None, "Error", "Year should be Integer.")
+        self.Release_Year.clear()
+
+      try:
+       if(int(self.Page.text())<1):
         QMessageBox.warning(None,"Warning","The number of pages should be more than zero")
         self.Page.clear()
 
-      if(int(self.Number.text())<1):
+      except:
+        QMessageBox.warning(None, "Error", "Page should be Integer.")
+        self.Page.clear()
+
+      try:
+       if(int(self.Number.text())<1):
         QMessageBox.warning(None,"Warning","The number of books should be more than zero")
         self.Number.clear()
+
+      except:
+        QMessageBox.warning(None,"Error","Number should be Integer.")
+        self.Number.clear()
+      
+      if(self.Edition.text()==''):
+        self.Edition.setText("1")
+      if(self.Edition.text().isdigit()):
+       if ('-' in self.Edition.text()):
+        self.Edition.setText(self.Edition.text().replace('-',''))
+
+       if(int(self.Edition.text())<1):
+         
+         QMessageBox.warning(None,"Warning","The number of books should be more than zero")
+         self.Edition.clear()
+
+       if(self.Edition.text()=='1'):
+        self.Edition.setText(self.Edition.text()+'st')
+       elif (self.Edition.text()=='2'):
+        self.Edition.setText(self.Edition.text()+'nd')
+       else:
+        self.Edition.setText(self.Edition.text()+'th')
+      else:
+        QMessageBox.warning(None, "Error", "Edition should be Integer.")
+        self.Edition.clear()
+      
+      self.Text=[]
+      for i in range(0,len(self.Title.text().split(" "))):
+        
+        if('I' in self.Title.text().split(" ")[i]):
+          self.Text.append(self.Title.text().split(" ")[i].capitalize().replace('i','ı'))
+        
+        elif ('i' in self.Title.text().split(" ")[i]):
+          self.Text.append(self.Title.text().split(" ")[i].capitalize().replace('I','İ'))
+
+        else:
+          self.Text.append(self.Title.text().split(" ")[i].capitalize())
+      
+      self.Title.setText(" ".join(self.Text))
+      self.Text.clear()
+      for i in range(0,len(self.Author.text().split(" "))):
+        if('I' in self.Author.text().split(" ")[i]):
+          self.Text.append(self.Author.text().split(" ")[i].capitalize().replace('i','ı'))
+        
+        elif ('i' in self.Author.text().split(" ")[i]):
+          self.Text.append(self.Author.text().split(" ")[i].capitalize().replace('I','İ'))
+
+        self.Text.append(self.Author.text().split(" ")[i].capitalize())
+      
+      self.Author.setText(" ".join(self.Text))
+
+
       
       flag=False
-     
-      if(self.Title.text()!='' and self.Author.text()!='' and self.Release_Year.text()!='' and self.Page.text()!='' and self.Number.text()!=''):
+      number=len(self.content)
+
+      if(self.Title.text()!='' and self.Author.text()!='' and self.Release_Year.text()!='' and self.Page.text()!='' and
+         self.Number.text()!='' and self.Edition.text()!=''):
        
        if (len(self.content)!=0):
 
@@ -457,33 +536,263 @@ class Library(QMainWindow):
           
           self.Content=self.content[i][3:].split(',')
           
-          if(self.Title.text()==self.Content[0] and self.Edition.text()==self.Content[5]):
+          if(self.Title.text()==self.Content[0] and self.Edition.text()==self.Content[5].replace('\n','')):
              
              self.content[i]=self.content[i].replace('\n','')
              text=",".join([self.Title.text(),self.Content[1],self.Content[2],self.Content[3],
                             str(int(self.Content[4])+int(self.Number.text())),self.Edition.text()])
-             self.content[i]=str(i+1) +') '+text+'\n'
-             
+             print(self.content)
+             self.content.pop(i)
+             self.content.insert(i,str(i+1) +') '+text+'\n')
+                        
              flag=True
              break
           
         if(flag):
-          
-          self.file.flush()
-          self.file.writelines(self.content)
+          self.file.close()
+          with open("books.txt","w",encoding='utf-8') as f:
+
+            while 1:
+             try:
+              self.content.remove('\n')
+             except:
+               break
+             
+            f.writelines(self.content)
+          self.file=open("books.txt","+a",encoding='utf-8')
+
         else:
-          text='\n'+str(len(self.content)+1) +') '+",".join([self.Title.text(),self.Author.text(),self.Release_Year.text(),
-                                                           self.Page.text(),self.Number.text(),self.Edition.text()])
+          
+          text=str(len(self.content)+1) +') '+",".join([self.Title.text(),self.Author.text(),self.Release_Year.text(),
+                                                           self.Page.text(),self.Number.text(),self.Edition.text()])+'\n'
           self.file.write(text)
-        
+
        else:
         text=str(len(self.content)+1)+") " +",".join([self.Title.text(),self.Author.text(),self.Release_Year.text(),self.Page.text(),
-                                                      self.Number.text(),self.Edition.text()])
+                                                      self.Number.text(),self.Edition.text()])+'\n'
         self.file.write(text)
+        
 
     def Remove(self):
+       
        self.Window=QWidget()
+       self.Window.setWindowTitle("Library Management")
+       self.Window.setStyleSheet("background : black")
+
+       self.Window.setMinimumWidth(400)
+       self.Window.setMinimumHeight(1000)
+
+       self.back=QPushButton("<")
+       self.back.setFont(QFont('Arial',14,3))
+       self.back.setStyleSheet('background : gray')
+       
+       self.quit=QPushButton("Quit")
+       self.quit.setFont(QFont('Arial',14,3))
+       self.quit.setStyleSheet("background : red")
+       self.quit.setShortcut(QKeySequence('q' or 'Q'))
+
+       self.remove=QPushButton("Remove")
+       self.remove.setFont(QFont('Arial',14,3))
+       self.remove.setStyleSheet("background : green")
+       self.remove.setShortcut(QKeySequence('return'))
+
+       self.clear=QPushButton("Clear")
+       self.clear.setFont(QFont('Arial',14,3))
+       self.clear.setStyleSheet("background : lightblue")
+
+       self.list=QPushButton("List Books")
+       self.list.setFont(QFont('Arial',14,3))
+       self.list.setStyleSheet("background : yellow")
+
+       self.title=QLabel("Title : ")
+       self.title.setFont(QFont('Arial',18,3))
+       self.title.setStyleSheet("color : white")
+
+       self.Title=QLineEdit()
+       self.Title.setFont(QFont('Arial',14,3))
+       self.Title.setStyleSheet("color : white")
+
+       self.edition=QLabel("Edition(1,2,3...) : ")
+       self.edition.setFont(QFont('Arial',18,3))
+       self.edition.setStyleSheet('color : White')
+
+       self.Edition=QLineEdit()
+       self.Edition.setFont(QFont('Arial',14,3))
+       self.Edition.setStyleSheet('color : white')
+
+       self.number=QLabel("Number : ")
+       self.number.setFont(QFont('Arial',18,3))
+       self.number.setStyleSheet('color : White')
+
+       self.Number=QLineEdit()
+       self.Number.setFont(QFont('Arial',14,3))
+       self.Number.setStyleSheet('color : white')
+
+       self.library=QLabel()
+       self.library.setPixmap(QPixmap("Library.jpg"))
+
+       v_box=QVBoxLayout()
+       
+       h_box=QHBoxLayout()
+       h_box.addSpacing(30)
+       h_box.addWidget(self.back)
+       h_box.addSpacing(50)
+       h_box.addWidget(self.quit)
+       h_box.addSpacing(30)
+
+       h_box2=QHBoxLayout()
+       h_box2.addSpacing(30)
+       h_box2.addWidget(self.title)
+       h_box2.addSpacing(275)
+       h_box2.addWidget(self.Title)
+       h_box2.addSpacing(30)
+
+       h_box3=QHBoxLayout()
+       h_box3.addSpacing(30)
+       h_box3.addWidget(self.number)
+       h_box3.addSpacing(225)
+       h_box3.addWidget(self.Number)
+       h_box3.addSpacing(30)
+
+       h_box4=QHBoxLayout()
+       h_box4.addSpacing(30)
+       h_box4.addWidget(self.edition)
+       h_box4.addSpacing(130)
+       h_box4.addWidget(self.Edition)
+       h_box4.addSpacing(30)
+
+       h_box5=QHBoxLayout()
+       h_box5.addSpacing(30)
+       h_box5.addWidget(self.clear)
+       h_box5.addSpacing(50)
+       h_box5.addWidget(self.list)
+       h_box5.addSpacing(50)
+       h_box5.addWidget(self.remove)
+       h_box5.addSpacing(30)
+
+       v_box.addSpacing(30)
+       v_box.addLayout(h_box)
+       v_box.addSpacing(30)
+       v_box.addWidget(self.library)
+       v_box.addSpacing(30)
+       v_box.addLayout(h_box2)
+       v_box.addSpacing(30)
+       v_box.addLayout(h_box3)
+       v_box.addSpacing(30)
+       v_box.addLayout(h_box4)
+       v_box.addSpacing(30)
+       v_box.addLayout(h_box5)
+       v_box.addSpacing(30)
+       self.Window.setLayout(v_box)
+
+       self.clear.clicked.connect(self.Clear)
+       self.quit.clicked.connect(self.Quit)
+       self.remove.clicked.connect(self.Confirm_Remove)
+       self.back.clicked.connect(self.Menu)
+       self.list.clicked.connect(self.List)
+
        self.Window.show()
+
+    def Confirm_Remove(self):
+
+      self.file.seek(0)
+      self.content=self.file.readlines()
+      self.content.sort()         
+      
+      if(self.Title.text()==''):
+         QMessageBox.warning(None,"Warning","Please input the title!")
+      
+      try:
+       if(int(self.Number.text())<1):
+        QMessageBox.warning(None,"Warning","The number of books should be more than zero")
+        self.Number.clear()
+
+      except:
+        QMessageBox.warning(None,"Error","Number should be Integer.")
+        self.Number.clear()
+      
+      if(self.Edition.text()==''):
+        self.Edition.setText("1")
+
+      if(self.Edition.text().isdigit()):
+       if ('-' in self.Edition.text()):
+        self.Edition.setText(self.Edition.text().replace('-',''))
+       
+       if(int(self.Edition.text())<1):
+         QMessageBox.warning(None,"Warning","The number of books should be more than zero")
+         self.Edition.clear()
+
+       if(self.Edition.text()=='1'):
+        self.Edition.setText(self.Edition.text()+'st')
+       elif (self.Edition.text()=='2'):
+        self.Edition.setText(self.Edition.text()+'nd')
+       else:
+        self.Edition.setText(self.Edition.text()+'th')
+      else:
+        QMessageBox.warning(None, "Error", "Edition should be Integer.")
+        self.Edition.clear()
+      
+      self.Text=[]
+      for i in range(0,len(self.Title.text().split(" "))):
+        
+        if('I' in self.Title.text().split(" ")[i]):
+          self.Text.append(self.Title.text().split(" ")[i].capitalize().replace('i','ı'))
+        
+        elif ('i' in self.Title.text().split(" ")[i]):
+          self.Text.append(self.Title.text().split(" ")[i].capitalize().replace('I','İ'))
+
+        else:
+          self.Text.append(self.Title.text().split(" ")[i].capitalize())
+      
+      self.Title.setText(" ".join(self.Text))
+
+      self.file.seek(0)
+      self.content=self.file.readlines()
+      flag=False
+
+      if(self.Title.text()!='' and self.Edition.text()!=''):
+       
+       if (len(self.content)!=0):
+
+        for i in range(0,len(self.content)):
+          
+         try:
+
+          self.content[i]=self.content[i].replace('\n','')[3:]
+          self.Content=self.content[i].split(',')
+          #print(self.Content)
+          
+          if(self.Title.text()==self.Content[0] and self.Edition.text()==self.Content[5].replace('\n','')):
+             if(int(self.Number.text())>=int(self.Content[4])):
+              self.content.pop(i)
+             else:
+              text=",".join([self.Title.text(),self.Content[1],self.Content[2],self.Content[3],
+                            str(int(self.Content[4])-int(self.Number.text())),self.Edition.text()])
+              print(self.content)
+              self.content.pop(i)
+              self.content.insert(i,text)
+                 
+             flag=True         
+             
+
+         except:
+           break
+          
+        if(flag):
+          self.file.close()
+          with open("books.txt","w",encoding="utf-8") as f:
+            for i in range(0,len(self.content)):
+              f.write(str(i+1)+") "+self.content[i]+'\n')
+
+          self.file=open("books.txt","+a",encoding="utf-8")
+          pass
+
+        else:
+           QMessageBox.warning(None,"Warning","Please check the information you entered.",QMessageBox.Ok)
+
+       else:
+            QMessageBox.warning(None,"Warning","Please check the information you entered.",QMessageBox.Ok)
+
       
     def Quit(self):
        qApp.quit()
