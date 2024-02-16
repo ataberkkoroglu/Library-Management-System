@@ -1,9 +1,9 @@
 from PyQt5.QtWidgets import QWidget,QApplication,QLineEdit,QTableWidget,QHeaderView,QLabel,QPushButton,QVBoxLayout,QHBoxLayout,QMessageBox
-from PyQt5.QtWidgets import QTableWidgetItem,QErrorMessage,QDesktopWidget,QMainWindow,qApp,QFileDialog
+from PyQt5.QtWidgets import QTableWidgetItem,QMainWindow,qApp,QFileDialog
 from PyQt5.QtGui import QFont,QPixmap,QKeySequence,QIcon
 from PyQt5.QtCore import Qt
 from datetime import datetime
-import sys,pandas as pd,os,openpyxl,time
+import sys,pandas as pd,os,openpyxl
 
 class Library(QMainWindow):
 
@@ -11,7 +11,7 @@ class Library(QMainWindow):
      super().__init__()
      self.file=open("books.txt","a+",encoding="utf-8")
 
-     msg=QMessageBox()
+     msg=QMessageBox() 
      msg.setWindowIcon(QIcon("Library_Icon.jpg"))
      msg=msg.information(self,"Library Management","Welcome To  The Library Management System!\n"+
                          str(datetime.strftime(datetime.now(),"%H : %M : %S  %d / %m / %Y ")))
@@ -22,7 +22,7 @@ class Library(QMainWindow):
        self.Window=QWidget()
        self.Window.setStyleSheet("background : black")
        self.Window.setWindowTitle("Library Management")
-      
+       self.Window.setGeometry(500,200,640,320)
        self.time=QLabel()
        self.time.setFont(QFont('Arial',20,2,True))
        self.time.setStyleSheet("color : White")
@@ -78,13 +78,14 @@ class Library(QMainWindow):
        v_box.addLayout(h_box2)
        v_box.addSpacing(50)
        v_box.addLayout(h_box3)
-      
-       v_box.addStretch()
+       v_box.addSpacing(30)
+
        self.Window.setLayout(v_box)
        self.list.clicked.connect(self.List)
        self.add.clicked.connect(self.Add)
        self.remove.clicked.connect(self.Remove)
        self.quit.clicked.connect(self.Quit)
+
        self.Window.show()
     
 
@@ -424,18 +425,21 @@ class Library(QMainWindow):
 
       if(self.Title.text()!=""):
        self.Title.clear()
+
       if(self.Edition.text()!=""):
        self.Edition.clear()
+
+      if(self.Number.text()!=""):
+       self.Number.clear()
+
       try:
         self.Author.clear()
         self.Release_Year.clear()
         self.Page.clear()
-        self.Number.clear()
+        
       except:
         pass
       
-      
-
     def Confirm_Add(self):
 
       self.file.seek(0)
@@ -516,15 +520,26 @@ class Library(QMainWindow):
         
         elif ('i' in self.Author.text().split(" ")[i]):
           self.Text.append(self.Author.text().split(" ")[i].capitalize().replace('I','İ'))
+        else:
+         self.Text.append(self.Author.text().split(" ")[i].capitalize())
 
-        self.Text.append(self.Author.text().split(" ")[i].capitalize())
       
-      self.Author.setText(" ".join(self.Text))
+      #self.Text=set(self.Text)
+      self.Author.setText(" ".join(list(self.Text)))
 
 
       
       flag=False
       number=len(self.content)
+
+      while 1:
+        try:
+          self.content.remove('\n')
+        except:
+          try:
+            self.content.remove('')
+          except:
+            break
 
       if(self.Title.text()!='' and self.Author.text()!='' and self.Release_Year.text()!='' and self.Page.text()!='' and
          self.Number.text()!='' and self.Edition.text()!=''):
@@ -541,7 +556,7 @@ class Library(QMainWindow):
              self.content[i]=self.content[i].replace('\n','')
              text=",".join([self.Title.text(),self.Content[1],self.Content[2],self.Content[3],
                             str(int(self.Content[4])+int(self.Number.text())),self.Edition.text()])
-             print(self.content)
+             
              self.content.pop(i)
              self.content.insert(i,str(i+1) +') '+text+'\n')
                         
@@ -551,14 +566,7 @@ class Library(QMainWindow):
         if(flag):
           self.file.close()
           with open("books.txt","w",encoding='utf-8') as f:
-
-            while 1:
-             try:
-              self.content.remove('\n')
-             except:
-               break
-             
-            f.writelines(self.content)
+             f.writelines(self.content)
           self.file=open("books.txt","+a",encoding='utf-8')
 
         else:
@@ -749,8 +757,17 @@ class Library(QMainWindow):
       self.file.seek(0)
       self.content=self.file.readlines()
       flag=False
-
-      if(self.Title.text()!='' and self.Edition.text()!=''):
+      
+      while 1:
+        try:
+          self.content.remove('\n')
+        except:
+          try:
+            self.content.remove('')
+          except:
+            break
+      
+      if(self.Title.text()!='' and self.Edition.text()!='' and self.Number.text()!=''):
        
        if (len(self.content)!=0):
 
@@ -760,38 +777,48 @@ class Library(QMainWindow):
 
           self.content[i]=self.content[i].replace('\n','')[3:]
           self.Content=self.content[i].split(',')
-          #print(self.Content)
+          
           
           if(self.Title.text()==self.Content[0] and self.Edition.text()==self.Content[5].replace('\n','')):
+             flag=True
+
              if(int(self.Number.text())>=int(self.Content[4])):
               self.content.pop(i)
+              
+              if(len(self.content)!=0):
+               self.content[i]=self.content[i][3:]
+               for j in range(i,len(self.content)):
+                self.content[j]=self.content[j].replace('\n','')
+                              
              else:
               text=",".join([self.Title.text(),self.Content[1],self.Content[2],self.Content[3],
                             str(int(self.Content[4])-int(self.Number.text())),self.Edition.text()])
-              print(self.content)
+              
               self.content.pop(i)
-              self.content.insert(i,text)
-                 
-             flag=True         
-             
-
+              self.content.insert(i,text)  
+                    
          except:
            break
           
         if(flag):
+          
           self.file.close()
           with open("books.txt","w",encoding="utf-8") as f:
+           if(len(self.content)!=0):
             for i in range(0,len(self.content)):
               f.write(str(i+1)+") "+self.content[i]+'\n')
+           else:
+             f.write("")
 
           self.file=open("books.txt","+a",encoding="utf-8")
-          pass
 
         else:
            QMessageBox.warning(None,"Warning","Please check the information you entered.",QMessageBox.Ok)
+           self.Clear()
 
        else:
-            QMessageBox.warning(None,"Warning","Please check the information you entered.",QMessageBox.Ok)
+            QMessageBox.warning(None,"Warning","The Library Is Empty.",QMessageBox.Ok)
+            self.Clear()
 
       
     def Quit(self):
