@@ -444,6 +444,10 @@ class Library(QMainWindow):
 
       self.file.seek(0)
       self.content=self.file.readlines()
+      if('\n' not in self.content[len(self.content)-1]):
+        self.file.write('\n')
+        self.file.seek(0)
+        self.content=self.file.readlines()
       self.content.sort()         
       
       if(self.Title.text()==''):
@@ -526,8 +530,6 @@ class Library(QMainWindow):
       
       #self.Text=set(self.Text)
       self.Author.setText(" ".join(list(self.Text)))
-
-
       
       flag=False
       number=len(self.content)
@@ -564,13 +566,17 @@ class Library(QMainWindow):
              break
           
         if(flag):
-          self.file.close()
-          with open("books.txt","w",encoding='utf-8') as f:
+         
+
+         self.file.close()
+         with open("books.txt","w",encoding='utf-8') as f:
              f.writelines(self.content)
-          self.file=open("books.txt","+a",encoding='utf-8')
+         self.file=open("books.txt","+a",encoding='utf-8')
 
         else:
-          
+          if('\n' not in self.content[len(self.content)-1]):
+            self.content[len(self.content)-1]=self.content[len(self.content)-1]+'\n'
+
           text=str(len(self.content)+1) +') '+",".join([self.Title.text(),self.Author.text(),self.Release_Year.text(),
                                                            self.Page.text(),self.Number.text(),self.Edition.text()])+'\n'
           self.file.write(text)
@@ -578,8 +584,7 @@ class Library(QMainWindow):
        else:
         text=str(len(self.content)+1)+") " +",".join([self.Title.text(),self.Author.text(),self.Release_Year.text(),self.Page.text(),
                                                       self.Number.text(),self.Edition.text()])+'\n'
-        self.file.write(text)
-        
+        self.file.write(text)     
 
     def Remove(self):
        
@@ -705,6 +710,10 @@ class Library(QMainWindow):
 
       self.file.seek(0)
       self.content=self.file.readlines()
+      if('\n' not in self.content[len(self.content)-1]):
+        self.file.write('\n')
+        self.file.seek(0)
+        self.content=self.file.readlines()
       self.content.sort()         
       
       if(self.Title.text()==''):
