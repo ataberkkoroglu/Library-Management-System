@@ -240,7 +240,7 @@ class Library(QMainWindow):
                          'Pages':self.Page_list, 'Number of Copies':self.Number_list,  
                           "Edition" : self.Edition_list})
      
-     default_dir="C:/Users/Asus/Desktop/Library Project"
+     default_dir="D://Python-Code-Exercise//Library Project"
      default_filename=os.path.join(default_dir,"Books.xlsx")
 
      filename,_=QFileDialog().getSaveFileName(self,"Save File",default_filename,"Excel Files (*.xlsx)")
@@ -566,12 +566,8 @@ class Library(QMainWindow):
              break
           
         if(flag):
-         
-
-         self.file.close()
-         with open("books.txt","w",encoding='utf-8') as f:
-             f.writelines(self.content)
-         self.file=open("books.txt","+a",encoding='utf-8')
+         self.file.truncate(0)
+         self.file.writelines(self.content)
 
         else:
           if('\n' not in self.content[len(self.content)-1]):
@@ -810,14 +806,13 @@ class Library(QMainWindow):
            break
           
         if(flag):
+          self.file.truncate(0)
           
-          self.file.close()
-          with open("books.txt","w",encoding="utf-8") as f:
-           if(len(self.content)!=0):
+          if(len(self.content)!=0):
             for i in range(0,len(self.content)):
-              f.write(str(i+1)+") "+self.content[i]+'\n')
-           else:
-             f.write("")
+              self.file.write(str(i+1)+") "+self.content[i]+'\n')
+          else:
+             self.file.write("")
 
           self.file=open("books.txt","+a",encoding="utf-8")
 
