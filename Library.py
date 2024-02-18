@@ -240,7 +240,7 @@ class Library(QMainWindow):
                          'Pages':self.Page_list, 'Number of Copies':self.Number_list,  
                           "Edition" : self.Edition_list})
      
-     default_dir="D://Python-Code-Exercise//Library Project"
+     default_dir="D://Library-Management-System"
      default_filename=os.path.join(default_dir,"Books.xlsx")
 
      filename,_=QFileDialog().getSaveFileName(self,"Save File",default_filename,"Excel Files (*.xlsx)")
@@ -807,7 +807,7 @@ class Library(QMainWindow):
           
         if(flag):
           self.file.truncate(0)
-          
+
           if(len(self.content)!=0):
             for i in range(0,len(self.content)):
               self.file.write(str(i+1)+") "+self.content[i]+'\n')
@@ -823,15 +823,12 @@ class Library(QMainWindow):
        else:
             QMessageBox.warning(None,"Warning","The Library Is Empty.",QMessageBox.Ok)
             self.Clear()
-
       
     def Quit(self):
        qApp.quit()
 
     def __del__(self):
-       
-       #self.Window.close()
-       self.file.close()
+      self.file.close()
 
 app=QApplication(sys.argv)
 app.setWindowIcon(QIcon("Library_Icon.jpg"))
